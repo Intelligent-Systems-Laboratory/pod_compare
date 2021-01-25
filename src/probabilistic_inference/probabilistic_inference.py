@@ -142,8 +142,9 @@ class ProbabilisticPredictor(ABC):
             boxes=predicted_boxes[0:max_boxes], covariance_matrices=predicted_covar_mats[0:max_boxes])
         prop_img = v_pred.get_image()
         vis_name = f"{max_boxes} Highest Scoring Results"
-        cv2.imshow(vis_name, prop_img)
-        cv2.waitKey()
+        #cv2.imshow(vis_name, prop_img)
+        #cv2.waitKey()
+        return prop_img
 
     @abstractmethod
     def post_processing_standard_nms(self, input_im):
@@ -204,7 +205,7 @@ class RetinaNetProbabilisticPredictor(ProbabilisticPredictor):
                     input_im,
                     return_anchorwise_output=True,
                     num_mc_dropout_runs=self.num_mc_dropout_runs)
-                n_fms = len(self.model.in_features)
+                n_fms = len(self.model.head_in_features)
                 outputs_list = [{key: value[i * n_fms:(i + 1) * n_fms] if value is not None else value for key,
                                  value in outputs_list.items()} for i in range(self.num_mc_dropout_runs)]
 

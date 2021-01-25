@@ -1,0 +1,43 @@
+With Dropout
+
+python src/train_net.py \
+--num-gpus 1 \
+--dataset-dir /public-dataset/BDD/bdd100k \
+--config-file /home/richard.tanai/cvpr2/pod_compare/src/configs/BDD-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml \
+--random-seed 0 \
+--resume
+
+python src/train_net.py \
+--num-gpus 1 \
+--dataset-dir /public-dataset/BDD/bdd100k \
+--config-file /home/richard.tanai/cvpr2/pod_compare/src/configs/BDD-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml \
+--random-seed 1000 \
+--resume
+
+python src/train_net.py \
+--num-gpus 1 \
+--dataset-dir /public-dataset/BDD/bdd100k \
+--config-file /home/richard.tanai/cvpr2/pod_compare/src/configs/BDD-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml \
+--random-seed 2000 \
+--resume
+
+python src/train_net.py \
+--num-gpus 1 \
+--dataset-dir /public-dataset/BDD/bdd100k \
+--config-file /home/richard.tanai/cvpr2/pod_compare/src/configs/BDD-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml \
+--random-seed 3000 \
+--resume
+
+python src/train_net.py \
+--num-gpus 1 \
+--dataset-dir /public-dataset/BDD/bdd100k \
+--config-file /home/richard.tanai/cvpr2/pod_compare/src/configs/BDD-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml \
+--random-seed 4000 \
+--resume
+
+python src/apply_net.py --dataset-dir /public-dataset/BDD/bdd100k \
+--test-dataset bdd_val \
+--config-file /home/richard.tanai/cvpr2/pod_compare/src/configs/BDD-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml \
+--random-seed 0 \
+--inference-config /home/richard.tanai/cvpr2/pod_compare/src/configs/Inference/bayes_od_mc_dropout.yaml
+

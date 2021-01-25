@@ -8,3 +8,5 @@ data
 *.pyc
 __pycache__
 
+
+src/.ipynb_checkpoints/inference-checkpoint.ipynb

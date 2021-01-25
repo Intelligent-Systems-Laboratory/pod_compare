@@ -88,6 +88,7 @@ def main(args):
         with torch.no_grad():
             with tqdm.tqdm(total=len(test_data_loader)) as pbar:
                 for idx, input_im in enumerate(test_data_loader):
+                    #print(input_im.size)
                     outputs = predictor(input_im)
 
                     final_output_list.extend(
@@ -101,7 +102,7 @@ def main(args):
             json.dump(final_output_list, fp, indent=4,
                       separators=(',', ': '))
 
-    #compute_average_precision.main(args, cfg)
+    compute_average_precision.main(args, cfg)
     compute_probabilistic_metrics.main(args, cfg)
     compute_calibration_errors.main(args, cfg)
 

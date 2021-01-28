@@ -122,7 +122,7 @@ class ProbabilisticRetinaNet(RetinaNet):
         if pred_anchor_deltas_vars is not None:
             pred_anchor_deltas_vars = [permute_to_N_HWA_K(x, self.bbox_cov_dims) for x in pred_anchor_deltas_vars]
 
-        if self.training:
+        if self.training:  #change to if mc_dropout_enabled
             assert "instances" in batched_inputs[0], "Instance annotations are missing in training!"
             gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
 

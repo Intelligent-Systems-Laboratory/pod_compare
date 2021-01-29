@@ -17,7 +17,7 @@ import core
 
 from core.datasets.setup_datasets import setup_all_datasets
 from probabilistic_modeling.probabilistic_retinanet import ProbabilisticRetinaNet
-
+#from probabilistic_modeling.probabilistic_retinanet_active import ProbabilisticRetinaNet
 
 def setup_arg_parser():
     """
@@ -131,6 +131,13 @@ def add_probabilistic_config(cfg):
     _C.PROBABILISTIC_INFERENCE.ENSEMBLES.BOX_MERGE_MODE = 'pre_nms'
     _C.PROBABILISTIC_INFERENCE.ENSEMBLES.RANDOM_SEED_NUMS = [
         0, 1000, 2000, 3000, 4000]
+
+
+    _C.ACTIVE_LEARNING = CN()
+    _C.ACTIVE_LEARNING.START_N = 100
+    _C.ACTIVE_LEARNING.STEP_N = 100
+    _C.ACTIVE_LEARNING.EPOCH = 1
+
 
 
 def setup_config(args, random_seed=None, is_testing=False):

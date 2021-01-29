@@ -17,7 +17,7 @@ from probabilistic_inference import inference_utils
 from probabilistic_modeling.modeling_utils import covariance_output_to_cholesky
 
 
-def build_predictor(cfg):
+def build_predictor(cfg, model=None):
     """
     Builds probabilistic predictor according to architecture in config file.
     Args:
@@ -27,7 +27,7 @@ def build_predictor(cfg):
         Instance of the correct predictor.
     """
     if cfg.MODEL.META_ARCHITECTURE == 'ProbabilisticRetinaNet':
-        return RetinaNetProbabilisticPredictor(cfg)
+        return RetinaNetProbabilisticPredictor(cfg, model)
     else:
         raise ValueError(
             'Invalid meta-architecture {}.'.format(cfg.MODEL.META_ARCHITECTURE))
@@ -38,10 +38,14 @@ class ProbabilisticPredictor(ABC):
     Abstract class for probabilistic predictor.
     """
 
-    def __init__(self, cfg):
+    def __init__(self, cfg, model=None):
         # Create common attributes.
         self.cfg = cfg.clone()  # cfg can be modified by model
-        self.model = build_model(self.cfg)
+
+        if model is not None:
+            self.model = model
+        else:
+            self.model = build_model(self.cfg)
         self.model_list = []
 
         # Parse config
@@ -75,13 +79,13 @@ class ProbabilisticPredictor(ABC):
                     cfg.MODEL.WEIGHTS,
                     resume=True)
                 self.model_list.append(model)
-        else:
-            # Or Load single model last checkpoint.
-            DetectionCheckpointer(
-                self.model,
-                save_dir=cfg.OUTPUT_DIR).resume_or_load(
-                cfg.MODEL.WEIGHTS,
-                resume=True)
+        #else:
+        #    # Or Load single model last checkpoint.
+        #    DetectionCheckpointer(
+        #        self.model,
+        #        save_dir=cfg.OUTPUT_DIR).resume_or_load(
+        #        cfg.MODEL.WEIGHTS,
+        #        resume=True)
 
     def __call__(self, input_im):
         # Generate detector output.
@@ -169,8 +173,8 @@ class ProbabilisticPredictor(ABC):
 
 class RetinaNetProbabilisticPredictor(ProbabilisticPredictor):
 
-    def __init__(self, cfg):
-        super().__init__(cfg)
+    def __init__(self, cfg, model=None):
+        super().__init__(cfg, model)
 
         # Create transform
         self.sample_box2box_transform = inference_utils.SampleBox2BoxTransform(

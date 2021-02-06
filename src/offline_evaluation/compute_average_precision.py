@@ -13,17 +13,18 @@ from pycocotools.cocoeval import COCOeval
 from core.setup import setup_config, setup_arg_parser
 
 
-def main(args, cfg=None):
+def main(args, cfg=None, inference_output_dir=None):
     # Setup config
     if cfg is None:
         cfg = setup_config(args, random_seed=args.random_seed, is_testing=True)
 
     # Build path to inference output
-    inference_output_dir = os.path.join(
-        cfg['OUTPUT_DIR'],
-        'inference',
-        args.test_dataset,
-        os.path.split(args.inference_config)[-1][:-5])
+    if inference_output_dir is None:
+        inference_output_dir = os.path.join(
+            cfg['OUTPUT_DIR'],
+            'inference',
+            args.test_dataset,
+            os.path.split(args.inference_config)[-1][:-5])
 
     prediction_file_name = os.path.join(
         inference_output_dir,

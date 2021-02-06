@@ -23,7 +23,8 @@ def main(
         cfg=None,
         iou_min=None,
         iou_correct=None,
-        min_allowed_score=None):
+        min_allowed_score=None,
+        inference_output_dir=None):
     # Setup config
     if cfg is None:
         cfg = setup_config(args, random_seed=args.random_seed, is_testing=True)
@@ -35,11 +36,12 @@ def main(
     torch.set_num_threads(cfg.DATALOADER.NUM_WORKERS)
 
     # Build path to gt instances and inference output
-    inference_output_dir = os.path.join(
-        cfg['OUTPUT_DIR'],
-        'inference',
-        args.test_dataset,
-        os.path.split(args.inference_config)[-1][:-5])
+    if inference_output_dir is None:
+        inference_output_dir = os.path.join(
+            cfg['OUTPUT_DIR'],
+            'inference',
+            args.test_dataset,
+            os.path.split(args.inference_config)[-1][:-5])
 
     # Get thresholds to perform evaluation on
     if iou_min is None:

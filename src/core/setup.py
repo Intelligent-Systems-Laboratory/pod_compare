@@ -134,9 +134,10 @@ def add_probabilistic_config(cfg):
 
 
     _C.ACTIVE_LEARNING = CN()
-    _C.ACTIVE_LEARNING.START_N = 100
-    _C.ACTIVE_LEARNING.STEP_N = 100
-    _C.ACTIVE_LEARNING.EPOCH = 1
+    _C.ACTIVE_LEARNING.START_N = 10000
+    _C.ACTIVE_LEARNING.STEP_N = 10000
+    _C.ACTIVE_LEARNING.EPOCH = 2
+    # epoch should be 4.5
 
 
 

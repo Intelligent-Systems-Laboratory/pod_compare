@@ -1,0 +1,313 @@
+[32m[02/05 10:20:04 detectron2]: [0mFull config saved to /home/richard.tanai/cvpr2/pod_compare/data/BDD-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout/random_seed_2000/config.yaml
+[32m[02/05 10:20:08 d2.data.datasets.coco]: [0mLoaded 10000 images in COCO format from /public-dataset/BDD/bdd100k/labels/val_coco_format.json
+[32m[02/05 10:20:09 d2.data.build]: [0mDistribution of instances among all 7 categories:
+[36m|  category  | #instances   |  category  | #instances   |  category  | #instances   |
+|:----------:|:-------------|:----------:|:-------------|:----------:|:-------------|
+|    car     | 102506       |    bus     | 1597         |   truck    | 4245         |
+|   person   | 13262        |   rider    | 649          |    bike    | 1007         |
+|   motor    | 452          |            |              |            |              |
+|   total    | 123718       |            |              |            |              |[0m
+[32m[02/05 10:20:09 d2.data.dataset_mapper]: [0m[DatasetMapper] Augmentations used in inference: [ResizeShortestEdge(short_edge_length=(800, 800), max_size=1333, sample_style='choice')]
+[32m[02/05 10:20:09 d2.data.common]: [0mSerializing 10000 elements to byte tensors and concatenating them all ...
+[32m[02/05 10:20:09 d2.data.common]: [0mSerialized dataset takes 9.03 MiB
+[32m[02/05 10:20:09 fvcore.common.checkpoint]: [0mLoading checkpoint from outputs3/checkpoint_step5.pth
+loading annotations into memory...
+Done (t=0.34s)
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=20.88s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=169.91s).
+Accumulating evaluation results...
+DONE (t=9.23s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.345
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.578
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.355
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.094
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.357
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.612
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.182
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.401
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.447
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.181
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.467
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.708
+Classification Score at Optimal F-1 Score: 0.4324545480310917
+Began pre-processing ground truth annotations...
+Done!
+Began pre-processing predicted instances...
+Done!
++------------------+---------------------+---------------------+---------------------+
+|   Output Type    | Number of Instances | Cls Ignorance Score | Reg Ignorance Score |
++------------------+---------------------+---------------------+---------------------+
+| True Positives:  |        57721        |        0.5627       |       14.5719       |
+| False Positives: |         4521        |        0.8729       |       10.6011       |
+| False Negatives: |        24338        |          -          |          -          |
++------------------+---------------------+---------------------+---------------------+
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+| Cls Marginal Calibration Error | Reg Expected Calibration Error | Reg Maximum Calibration Error | Cls Minimum Uncertainty Error | Reg Minimum Uncertainty Error |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+|             0.0258             |             0.0220             |             0.0510            |             0.2061            |             0.3605            |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+[32m[02/05 11:22:45 fvcore.common.checkpoint]: [0mLoading checkpoint from outputs3/checkpoint_step2.pth
+loading annotations into memory...
+Done (t=0.37s)
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=23.16s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=196.72s).
+Accumulating evaluation results...
+DONE (t=10.03s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.174
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.472
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.079
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.052
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.203
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.298
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.104
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.266
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.307
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.105
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.340
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.476
+Classification Score at Optimal F-1 Score: 0.24706483706831933
+Began pre-processing ground truth annotations...
+Done!
+Began pre-processing predicted instances...
+Done!
++------------------+---------------------+---------------------+---------------------+
+|   Output Type    | Number of Instances | Cls Ignorance Score | Reg Ignorance Score |
++------------------+---------------------+---------------------+---------------------+
+| True Positives:  |        39155        |        0.9170       |       16.8297       |
+| False Positives: |        26443        |        0.3834       |       18.4494       |
+| False Negatives: |         9359        |          -          |          -          |
++------------------+---------------------+---------------------+---------------------+
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+| Cls Marginal Calibration Error | Reg Expected Calibration Error | Reg Maximum Calibration Error | Cls Minimum Uncertainty Error | Reg Minimum Uncertainty Error |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+|             0.0584             |             0.0865             |             0.2145            |             0.2391            |             0.4068            |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+[32m[02/05 12:29:06 fvcore.common.checkpoint]: [0mLoading checkpoint from outputs3/checkpoint_step7.pth
+loading annotations into memory...
+Done (t=0.37s)
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=25.18s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=171.50s).
+Accumulating evaluation results...
+DONE (t=9.32s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.338
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.576
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.343
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.090
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.346
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.607
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.182
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.401
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.445
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.184
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.462
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.706
+Classification Score at Optimal F-1 Score: 0.45830352529883384
+Began pre-processing ground truth annotations...
+Done!
+Began pre-processing predicted instances...
+Done!
++------------------+---------------------+---------------------+---------------------+
+|   Output Type    | Number of Instances | Cls Ignorance Score | Reg Ignorance Score |
++------------------+---------------------+---------------------+---------------------+
+| True Positives:  |        57061        |        0.5308       |       18.8110       |
+| False Positives: |         4453        |        0.9362       |       10.0570       |
+| False Negatives: |        26087        |          -          |          -          |
++------------------+---------------------+---------------------+---------------------+
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+| Cls Marginal Calibration Error | Reg Expected Calibration Error | Reg Maximum Calibration Error | Cls Minimum Uncertainty Error | Reg Minimum Uncertainty Error |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+|             0.0207             |             0.0096             |             0.0249            |             0.2135            |             0.3814            |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+[32m[02/05 13:32:34 fvcore.common.checkpoint]: [0mLoading checkpoint from outputs3/checkpoint_step1.pth
+loading annotations into memory...
+Done (t=0.37s)
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=21.80s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=207.53s).
+Accumulating evaluation results...
+DONE (t=13.32s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.008
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.050
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.005
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.007
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.015
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.012
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.068
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.110
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.023
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.103
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.198
+Classification Score at Optimal F-1 Score: 0.11119558364152908
+Began pre-processing ground truth annotations...
+Done!
+Began pre-processing predicted instances...
+Done!
++------------------+---------------------+---------------------+---------------------+
+|   Output Type    | Number of Instances | Cls Ignorance Score | Reg Ignorance Score |
++------------------+---------------------+---------------------+---------------------+
+| True Positives:  |         4120        |        1.7921       |       21.9573       |
+| False Positives: |        219578       |        0.1839       |       23.6075       |
+| False Negatives: |         2914        |          -          |          -          |
++------------------+---------------------+---------------------+---------------------+
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+| Cls Marginal Calibration Error | Reg Expected Calibration Error | Reg Maximum Calibration Error | Cls Minimum Uncertainty Error | Reg Minimum Uncertainty Error |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+|             0.0769             |             0.0889             |             0.2178            |             0.2842            |             0.3761            |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+[32m[02/05 14:42:03 fvcore.common.checkpoint]: [0mLoading checkpoint from outputs3/checkpoint_step6.pth
+loading annotations into memory...
+Done (t=0.37s)
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=19.65s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=163.89s).
+Accumulating evaluation results...
+DONE (t=8.47s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.343
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.580
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.348
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.092
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.353
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.612
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.183
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.405
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.450
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.191
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.468
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.710
+Classification Score at Optimal F-1 Score: 0.4590655595064163
+Began pre-processing ground truth annotations...
+Done!
+Began pre-processing predicted instances...
+Done!
++------------------+---------------------+---------------------+---------------------+
+|   Output Type    | Number of Instances | Cls Ignorance Score | Reg Ignorance Score |
++------------------+---------------------+---------------------+---------------------+
+| True Positives:  |        57305        |        0.5486       |       17.0102       |
+| False Positives: |         4075        |        0.9190       |       10.1014       |
+| False Negatives: |        26722        |          -          |          -          |
++------------------+---------------------+---------------------+---------------------+
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+| Cls Marginal Calibration Error | Reg Expected Calibration Error | Reg Maximum Calibration Error | Cls Minimum Uncertainty Error | Reg Minimum Uncertainty Error |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+|             0.0220             |             0.0121             |             0.0279            |             0.2215            |             0.3972            |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+[32m[02/05 15:45:24 fvcore.common.checkpoint]: [0mLoading checkpoint from outputs3/checkpoint_step4.pth
+loading annotations into memory...
+Done (t=0.37s)
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=23.79s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=182.69s).
+Accumulating evaluation results...
+DONE (t=10.02s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.308
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.555
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.316
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.093
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.320
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.542
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.163
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.373
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.423
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.175
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.440
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.662
+Classification Score at Optimal F-1 Score: 0.35054852776229384
+Began pre-processing ground truth annotations...
+Done!
+Began pre-processing predicted instances...
+Done!
++------------------+---------------------+---------------------+---------------------+
+|   Output Type    | Number of Instances | Cls Ignorance Score | Reg Ignorance Score |
++------------------+---------------------+---------------------+---------------------+
+| True Positives:  |        58288        |        0.6125       |       13.1001       |
+| False Positives: |         9760        |        0.6342       |       13.6326       |
+| False Negatives: |        17479        |          -          |          -          |
++------------------+---------------------+---------------------+---------------------+
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+| Cls Marginal Calibration Error | Reg Expected Calibration Error | Reg Maximum Calibration Error | Cls Minimum Uncertainty Error | Reg Minimum Uncertainty Error |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+|             0.0420             |             0.0482             |             0.1132            |             0.2242            |             0.3697            |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+[32m[02/05 16:50:38 fvcore.common.checkpoint]: [0mLoading checkpoint from outputs3/checkpoint_step3.pth
+loading annotations into memory...
+Done (t=2.12s)
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=18.40s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=165.77s).
+Accumulating evaluation results...
+DONE (t=9.16s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.334
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.577
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.344
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.090
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.363
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.579
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.180
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.417
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.468
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.179
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.516
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.710
+Classification Score at Optimal F-1 Score: 0.39337062537670137
+Began pre-processing ground truth annotations...
+Done!
+Began pre-processing predicted instances...
+Done!
++------------------+---------------------+---------------------+---------------------+
+|   Output Type    | Number of Instances | Cls Ignorance Score | Reg Ignorance Score |
++------------------+---------------------+---------------------+---------------------+
+| True Positives:  |        55568        |        0.6276       |       12.8601       |
+| False Positives: |         3879        |        0.6541       |       13.4006       |
+| False Negatives: |        27814        |          -          |          -          |
++------------------+---------------------+---------------------+---------------------+
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+| Cls Marginal Calibration Error | Reg Expected Calibration Error | Reg Maximum Calibration Error | Cls Minimum Uncertainty Error | Reg Minimum Uncertainty Error |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+
+|             0.0471             |             0.0471             |             0.1077            |             0.1959            |             0.3703            |
++--------------------------------+--------------------------------+-------------------------------+-------------------------------+-------------------------------+

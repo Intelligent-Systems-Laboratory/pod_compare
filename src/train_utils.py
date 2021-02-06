@@ -35,7 +35,8 @@ from detectron2.utils.logger import setup_logger
 from detectron2.engine import DefaultTrainer, launch
 from detectron2.data.build import get_detection_dataset_dicts
 from detectron2.data.build import DatasetMapper
-from detectron2.data.samplers import TrainingSampler
+from detectron2.data.common import MapDataset
+from detectron2.data.samplers import TrainingSampler, InferenceSampler
 from detectron2.evaluation import COCOEvaluator, DatasetEvaluators, verify_results
 
 from detectron2.engine import hooks
@@ -99,7 +100,7 @@ class ActiveTrainer(TrainerBase):
         if not logger.isEnabledFor(logging.INFO):  # setup_logger is not called for d2
             setup_logger()
         #cfg = DefaultTrainer.auto_scale_workers(cfg, comm.get_world_size())
-        cfg = ActiveTrainer.auto_scale_workers(cfg, comm.get_world_size())
+        #cfg = ActiveTrainer.auto_scale_workers(cfg, comm.get_world_size())
         self.cfg = cfg
         # Assume these objects must be constructed in this order.
         #model = self.build_model(cfg)
@@ -156,11 +157,12 @@ class ActiveTrainer(TrainerBase):
         #    scheduler=self.scheduler,
         #)
         self.start_iter = 0
-        max_iter = len(self.dataset)/(self.cfg.ACTIVE_LEARNING.EPOCH*self.cfg.SOLVER.IMS_PER_BATCH)
+        max_iter = len(self.dataset)*self.cfg.ACTIVE_LEARNING.EPOCH/self.cfg.SOLVER.IMS_PER_BATCH
         self.max_iter = int(max_iter)
    
+        self._hooks=[]
+        self.register_hooks(self.build_hooks())
 
-        #self.register_hooks(self.build_hooks())
     
     # perfrom this function when the active dataset is updated
     def rebuild_trainer_start(self):
@@ -174,9 +176,19 @@ class ActiveTrainer(TrainerBase):
         #    model = DistributedDataParallel(
         #        model, device_ids=[comm.get_local_rank()], broadcast_buffers=False
         #    )
+
+        # it might be good to rebuild the scheduler and trainer at every al step
         self._trainer = (AMPTrainer if self.cfg.SOLVER.AMP.ENABLED else SimpleTrainer)(
             self.model_start, self.train_data_loader, self.optimizer_start
         )
+
+        # it might be a good idea to rebuild the lr scheduler so that it would fit each active learning 
+        # parameters that have to be updated are
+        #optimizer,
+        #    cfg.SOLVER.MAX_ITER,
+        #    warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
+        #    warmup_iters=cfg.SOLVER.WARMUP_ITERS,
+        #    warmup_method=cfg.SOLVER.WARMUP_METHOD
 
         self.scheduler = self.build_lr_scheduler(self.cfg, self.optimizer)
         # Assume no other objects need to be checkpointed.
@@ -185,16 +197,19 @@ class ActiveTrainer(TrainerBase):
             # Assume you want to save checkpoints together with logs/statistics
             self.model_start,
             self.cfg.OUTPUT_DIR,
-            optimizer=self.optimizer_start,
-            scheduler=self.scheduler,
+            #optimizer=self.optimizer_start,
+            #scheduler=self.scheduler,
+            # not gonna resume training anyways
         )
         self.start_iter = 0
-        max_iter = len(self.dataset)/(self.cfg.ACTIVE_LEARNING.EPOCH*self.cfg.SOLVER.IMS_PER_BATCH)
+        max_iter = len(self.dataset)*self.cfg.ACTIVE_LEARNING.EPOCH/self.cfg.SOLVER.IMS_PER_BATCH
         self.max_iter = int(max_iter)
   
 
         self.register_hooks(self.build_hooks())
 
+    def pool(self):
+        return self.dataset.pool
 
     def resume_or_load(self, resume=True):
         """
@@ -236,7 +251,8 @@ class ActiveTrainer(TrainerBase):
                 cfg.TEST.EVAL_PERIOD,
                 self.model,
                 # Build a new data loader to not affect training
-                self.build_train_loader(cfg),
+                #self.build_train_loader(cfg),
+                self.build_train_loader_from_dataset(),
                 cfg.TEST.PRECISE_BN.NUM_ITER,
             )
             if cfg.TEST.PRECISE_BN.ENABLED and get_bn_modules(self.model)
@@ -256,11 +272,13 @@ class ActiveTrainer(TrainerBase):
 
         # Do evaluation after checkpointer, because then if it fails,
         # we can use the saved checkpoint to debug.
+        # eval after train makes it longer, eval will be done when after all the models have been saveed
         #ret.append(hooks.EvalHook(cfg.TEST.EVAL_PERIOD, test_and_save_results))
 
-        #if comm.is_main_process():
+        if comm.is_main_process():
         #    # run writers in the end, so that evaluation metrics are written
-        #    ret.append(hooks.PeriodicWriter(self.build_writers(), period=20))
+        # this prints out the losses for the period
+            ret.append(hooks.PeriodicWriter(self.build_writers(), period=100))
         return ret
 
     def build_writers(self):
@@ -287,8 +305,9 @@ class ActiveTrainer(TrainerBase):
         return [
             # It may not always print what you want to see, since it prints "common" metrics only.
             CommonMetricPrinter(self.max_iter),
-            JSONWriter(os.path.join(self.cfg.OUTPUT_DIR, "metrics.json")),
-            TensorboardXWriter(self.cfg.OUTPUT_DIR),
+            # json writer will be overwritten unless the output dir is changed
+            #JSONWriter(os.path.join(self.cfg.OUTPUT_DIR, "metrics.json")),
+            #TensorboardXWriter(self.cfg.OUTPUT_DIR),
         ]
 
     def train(self):
@@ -322,6 +341,24 @@ class ActiveTrainer(TrainerBase):
         dataset = ActiveLearningDataset(dataset)
         return dataset
     
+    def build_pool_dataloader(self):
+        dataset = self.dataset.pool
+        mapper = DatasetMapper(self.cfg, False)
+        if isinstance(dataset, list):
+            dataset = DatasetFromList(dataset, copy=False)
+        if mapper is not None:
+            dataset = MapDataset(dataset, mapper)
+        sampler = InferenceSampler(len(dataset))
+        batch_sampler = torch.utils.data.sampler.BatchSampler(sampler, 1, drop_last=False)
+        num_workers = self.cfg.DATALOADER.NUM_WORKERS
+        data_loader = torch.utils.data.DataLoader(
+            dataset,
+            num_workers=num_workers,
+            batch_sampler=batch_sampler,
+            collate_fn=self.trivial_batch_collator,
+        )
+        return data_loader
+
     @classmethod
     def build_model(cls, cfg):
         """
@@ -401,6 +438,11 @@ class ActiveTrainer(TrainerBase):
         evaluators = [COCOEvaluator(dataset_name, cfg, True, output_folder)]
         return DatasetEvaluators(evaluators)
 
+    def trivial_batch_collator(self, batch):
+        """
+        A batch collator that does nothing.
+        """
+        return batch
 
     @classmethod
     def test(cls, cfg, model, evaluators=None):
@@ -528,5 +570,6 @@ class ActiveTrainer(TrainerBase):
 
 
 # Access basic attributes from the underlying trainer
+# What if I remove this
 for _attr in ["model", "data_loader", "optimizer"]:
     setattr(ActiveTrainer, _attr, property(lambda self, x=_attr: getattr(self._trainer, x)))

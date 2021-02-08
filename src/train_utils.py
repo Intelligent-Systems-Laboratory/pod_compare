@@ -45,6 +45,34 @@ from detectron2.engine.train_loop import AMPTrainer, SimpleTrainer, TrainerBase
 # Import baal
 from baal.active import FileDataset, ActiveLearningDataset
 
+def compute_cls_entropy(cls_preds, merge="mean"):
+    assert len(cls_preds.shape) == 2
+    
+    ent = np.array([])
+    for det_preds in cls_preds:
+        ent = np.append(ent, (-det_preds*np.log(det_preds)).sum())
+
+    if merge == "mean":        
+        return ent.mean()
+    
+    elif merge == "max":
+        return ent.max()
+    
+    else:
+        raise ValueError('Invalid detection merge mode for entropy {}.'.format(merge))
+
+def compute_cls_max_conf(cls_preds, merge="mean"):
+    assert len(cls_preds.shape) == 2
+    
+    if merge == "mean":
+        
+        return cls_preds.max(axis=1).mean()
+    
+    elif merge == "max":
+        return cls_preds.max(axis=1).max()
+    
+    else:
+        raise ValueError('Invalid detection merge mode for max_conf {}.'.format(merge))
 
 #New modified class for training with the active learning
 class ActiveTrainer(TrainerBase):

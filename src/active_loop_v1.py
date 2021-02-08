@@ -19,7 +19,7 @@ from offline_evaluation import compute_average_precision, compute_probabilistic_
 from probabilistic_inference.probabilistic_inference import build_predictor
 from probabilistic_inference.inference_utils import instances_to_json
 
-from train_utils import ActiveTrainer
+from train_utils import ActiveTrainer, compute_cls_entropy, compute_cls_max_conf
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -104,13 +104,26 @@ DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
 trainer = ActiveTrainer(cfg, model)
 #trainer.resume_or_load(resume=True)
 
-#predictor = build_predictor(cfg, model)
-
-# 10000 is already started in the init
+# 10000 is already started in the init using cfg
 # epoch is 20, just an arbitrary number lol
 train_step = 1
 label_per_step = 10000
-out_dir = "outputs_v1_10k"
+
+# cfg.ACTIVE_LEARNING.OUT_DIR
+out_dir = "outputs_10k_cls1_only"
+
+# entropy or max_conf
+
+# cfg.ACTIVE_LEARNING.DET_CLS_SCORE
+#det_cls_score = "entropy"
+
+det_cls_score = "max_conf"
+#cfg.ACTIVE_LEARNING.DET_CLS_MERGE_MODE
+det_cls_merge_mode = "mean"
+
+# cls score and box score weighted sum factor, 1 is full cls_score
+# cfg.ACTIVE_LEARNING.W_CLS_SCORE
+w_cls_score = 1
 
 os.makedirs(out_dir, exist_ok=True)
 
@@ -147,22 +160,23 @@ while(1):
 
                     box_score = np.array([mat.diagonal().prod() for mat in predicted_covar_mats]).mean()
                     #mean of the max confidence pre detection
-                    cls_score = cls_preds.max(axis=1).mean()
-                    #change cls_score to entropy next time
+                    if det_cls_score == "entropy":
+                        cls_score = compute_cls_entropy(cls_preds, det_cls_merge_mode) #entropy, mean default
+                    elif det_cls_score == "max_conf":
+                        cls_score = compute_cls_max_conf(cls_preds, det_cls_merge_mode)
+                    else:
+                        raise ValueError('Invalid det_cls_score {}.'.format(det_cls_score))
+                        
                     box_score_list.append(box_score)
                     cls_score_list.append(cls_score)
 
                     pbar.update(1)
-                    if idx > 10:
-                        print(f"the length of the pool is {len(pool_loader)}")
-                        break
-
 
     cls_score_rank = np.array(cls_score_list).argsort().argsort()
     box_score_rank = (-np.array(box_score_list)).argsort().argsort()
 
     #possible weighted fusion can be added here
-    total_sort = np.argsort(cls_score_rank + box_score_rank)
+    total_sort = np.argsort((w_cls_score)*cls_score_rank + (1-w_cls_score)*box_score_rank)
     
 
     if len(trainer.dataset.pool) >= label_per_step:
@@ -174,5 +188,4 @@ while(1):
         break
     trainer.rebuild_trainer()
     train_step += 1
-
 

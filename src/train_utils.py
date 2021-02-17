@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Facebook, Inc. and its affiliates.
-
+import numpy as np
 import argparse
 import logging
 import os
@@ -37,7 +37,7 @@ from detectron2.data.build import get_detection_dataset_dicts
 from detectron2.data.build import DatasetMapper
 from detectron2.data.common import MapDataset
 from detectron2.data.samplers import TrainingSampler, InferenceSampler
-from detectron2.evaluation import COCOEvaluator, DatasetEvaluators, verify_results
+from detectron2.evaluation import COCOEvaluator, DatasetEvaluators, verify_results, PascalVOCDetectionEvaluator
 
 from detectron2.engine import hooks
 from detectron2.engine.train_loop import AMPTrainer, SimpleTrainer, TrainerBase
@@ -73,6 +73,9 @@ def compute_cls_max_conf(cls_preds, merge="mean"):
     
     else:
         raise ValueError('Invalid detection merge mode for max_conf {}.'.format(merge))
+
+
+
 
 #New modified class for training with the active learning
 class ActiveTrainer(TrainerBase):
@@ -463,7 +466,14 @@ class ActiveTrainer(TrainerBase):
             detectron2 DatasetEvaluators object
         """
         output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
-        evaluators = [COCOEvaluator(dataset_name, cfg, True, output_folder)]
+
+        # add an option such that the evaluator will based on the config file
+        if 'coco' in cfg.DATASETS.TRAIN[0]:
+            evaluators = [COCOEvaluator(dataset_name, cfg, True, output_folder)]
+        elif 'voc' in cfg.DATASETS.TRAIN[0]:
+            evaluators = [PascalVOCDetectionEvaluator(dataset_name, cfg, True, output_folder)]
+        else:
+            raise ValueError("dataset name is unrecognized")
         return DatasetEvaluators(evaluators)
 
     def trivial_batch_collator(self, batch):

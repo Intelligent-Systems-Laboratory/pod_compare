@@ -28,9 +28,9 @@ arg_parser = setup_arg_parser()
 args = arg_parser.parse_args("")
 # Support single gpu inference only.
 args.num_gpus = 1
-args.dataset_dir = '/public-dataset/BDD/bdd100k'
-args.test_dataset = 'bdd_val'
-args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/BDD-Detection/retinanet/active_retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml'
+args.dataset_dir = '~/datasets/VOC2012'
+args.test_dataset = 'voc_2012_test'
+args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/VOC-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml'
 args.inference_config = '/home/richard.tanai/cvpr2/pod_compare/src/configs/Inference/bayes_od_mc_dropout.yaml'
 args.random_seed = 1000
 args.resume=False
@@ -63,33 +63,6 @@ os.makedirs(inference_output_dir, exist_ok=True)
 copyfile(args.inference_config, os.path.join(
     inference_output_dir, os.path.split(args.inference_config)[-1]))
 
-# Get category mapping dictionary:
-train_thing_dataset_id_to_contiguous_id = MetadataCatalog.get(
-    cfg.DATASETS.TRAIN[0]).thing_dataset_id_to_contiguous_id
-test_thing_dataset_id_to_contiguous_id = MetadataCatalog.get(
-    args.test_dataset).thing_dataset_id_to_contiguous_id
-
-# If both dicts are equal or if we are performing out of distribution
-# detection, just flip the test dict.
-if (train_thing_dataset_id_to_contiguous_id == test_thing_dataset_id_to_contiguous_id) or (
-        cfg.DATASETS.TRAIN[0] == 'coco_not_in_voc_2017_train'):
-    cat_mapping_dict = dict(
-        (v, k) for k, v in test_thing_dataset_id_to_contiguous_id.items())
-else:
-    # If not equal, two situations: 1) BDD to KITTI and 2) COCO to PASCAL
-    cat_mapping_dict = dict(
-        (v, k) for k, v in test_thing_dataset_id_to_contiguous_id.items())
-    if 'voc' in args.test_dataset and 'coco' in cfg.DATASETS.TRAIN[0]:
-        dataset_mapping_dict = dict(
-            (v, k) for k, v in metadata.COCO_TO_VOC_CONTIGUOUS_ID.items())
-    elif 'kitti' in args.test_dataset and 'bdd' in cfg.DATASETS.TRAIN[0]:
-        dataset_mapping_dict = dict(
-            (v, k) for k, v in metadata.BDD_TO_KITTI_CONTIGUOUS_ID.items())
-    else:
-        ValueError(
-            'Cannot generate category mapping dictionary. Please check if training and inference datasets are compatible.')
-    cat_mapping_dict = dict(
-        (dataset_mapping_dict[k], v) for k, v in cat_mapping_dict.items())
 
 # Build predictor
 model = build_model(cfg)
@@ -158,11 +131,7 @@ while(1):
                 for idx, input_im in enumerate(pool_loader):
                     #print(input_im.size)
                     outputs = predictor(input_im)
-                    final_output_list.extend(
-                        instances_to_json(
-                            outputs,
-                            input_im[0]['image_id'],
-                            cat_mapping_dict))
+
                     results = outputs
 
                     cls_preds = results.pred_cls_probs.cpu().numpy()

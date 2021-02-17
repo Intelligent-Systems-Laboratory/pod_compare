@@ -137,6 +137,13 @@ def add_probabilistic_config(cfg):
     _C.ACTIVE_LEARNING.START_N = 10000
     _C.ACTIVE_LEARNING.STEP_N = 10000
     _C.ACTIVE_LEARNING.EPOCH = 2
+    _C.ACTIVE_LEARNING.OUT_DIR = "outputs"
+
+    #options "max_conf" "entropy"
+    _C.ACTIVE_LEARNING.DET_CLS_SCORE = "max_conf"
+    _C.ACTIVE_LEARNING.DET_CLS_MERGE_MODE = "mean"
+
+    _C.ACTIVE_LEARNING.W_CLS_SCORE = 0.5
     # epoch should be 4.5
 
 

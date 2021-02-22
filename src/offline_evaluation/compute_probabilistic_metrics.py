@@ -24,7 +24,8 @@ def main(
         iou_min=None,
         iou_correct=None,
         min_allowed_score=None,
-        inference_output_dir=None):
+        inference_output_dir=None,
+        to_file=None):
     # Setup config
     if cfg is None:
         cfg = setup_config(args, random_seed=args.random_seed, is_testing=True)
@@ -205,6 +206,16 @@ def main(
                        '-',
                        '-'])
         print(table)
+
+        if to_file is not None:
+            with open(to_file, "a") as out_file:
+                out_file.write(f"\nInstanes TP: {num_true_positives}\n")
+                out_file.write(f"Instanes FP: {num_false_positives}\n")
+                out_file.write(f"Instanes FN: {num_false_negatives}\n")
+                out_file.write(f"Cls Ignorance TP : {final_average_output_dict['true_positives_cls_analysis']['ignorance_score_mean']:.4f}\n")
+                out_file.write(f"Cls Ignorance FP : {final_average_output_dict['false_positives_cls_analysis']['ignorance_score_mean']:.4f}\n")
+                out_file.write(f"Cls Ignorance TP : {final_average_output_dict['true_positives_reg_analysis']['ignorance_score_mean']:.4f}\n")
+                out_file.write(f"Cls Ignorance FP : {final_average_output_dict['false_positives_reg_analysis']['total_entropy_mean']:.4f}\n\n")
 
 
 if __name__ == "__main__":

@@ -23,13 +23,17 @@ from train_utils import ActiveTrainer, compute_cls_entropy, compute_cls_max_conf
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
+# multiprocessing version of 
+
+
 ##setup inference args, this also contains all the training args
 arg_parser = setup_arg_parser()
 args = arg_parser.parse_args("")
 # Support single gpu inference only.
 args.num_gpus = 1
 args.dataset_dir = '~/datasets/VOC2012'
-args.test_dataset = 'voc2012_no_bg_val'
+args.test_dataset = 'voc_2012_test'
 args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/VOC-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml'
 args.inference_config = '/home/richard.tanai/cvpr2/pod_compare/src/configs/Inference/bayes_od_mc_dropout.yaml'
 args.random_seed = 1000
@@ -83,13 +87,26 @@ trainer = ActiveTrainer(cfg, model)
 ## active learning loop configurables
 
 train_step = 1
-
-
-max_step = cfg.ACTIVE_LEARNING.MAX_STEP
+#label_per_step = 10000
 label_per_step = cfg.ACTIVE_LEARNING.STEP_N
+
+# cfg.ACTIVE_LEARNING.OUT_DIR
+#out_dir = "outputs_10k_cls1_only"
 out_dir = cfg.ACTIVE_LEARNING.OUT_DIR
+
+# entropy or max_conf
+
+# cfg.ACTIVE_LEARNING.DET_CLS_SCORE
+#det_cls_score = "entropy"
 det_cls_score = cfg.ACTIVE_LEARNING.DET_CLS_SCORE
+
+#cfg.ACTIVE_LEARNING.DET_CLS_MERGE_MODE
+#det_cls_merge_mode = "mean"
 det_cls_merge_mode = cfg.ACTIVE_LEARNING.DET_CLS_MERGE_MODE
+
+# cls score and box score weighted sum factor, 1 is full cls_score
+# cfg.ACTIVE_LEARNING.W_CLS_SCORE
+#w_cls_score = 1
 w_cls_score = cfg.ACTIVE_LEARNING.W_CLS_SCORE
 
 os.makedirs(out_dir, exist_ok=True)
@@ -100,7 +117,7 @@ while(1):
     trainer.train()
     torch.save(model.state_dict(), f"{out_dir}/checkpoint_step{train_step}.pth")
 
-    if len(trainer.dataset.pool) <= 0 or train_step >= max_step:
+    if len(trainer.dataset.pool) <= 0:
         print("training completed")
         break
 
@@ -112,60 +129,47 @@ while(1):
 
     predictor = build_predictor(cfg, model)
 
-    if det_cls_score == 'random':
-        if len(trainer.dataset.pool) >= label_per_step:
-            trainer.dataset.label_randomly(label_per_step)
-        elif len(trainer.dataset.pool) > 0:
-            trainer.dataset.label_randomly(len(trainer.dataset.pool))
-        else:
-            break
+    if not args.eval_only:
+        with torch.no_grad():
+            with tqdm.tqdm(total=len(pool_loader)) as pbar:
+                for idx, input_im in enumerate(pool_loader):
+                    #print(input_im.size)
+                    outputs = predictor(input_im)
 
-    else:
-        if not args.eval_only:
-            with torch.no_grad():
-                with tqdm.tqdm(total=len(pool_loader)) as pbar:
-                    for idx, input_im in enumerate(pool_loader):
-                        #print(input_im.size)
-                        outputs = predictor(input_im)
+                    results = outputs
 
-                        results = outputs
+                    cls_preds = results.pred_cls_probs.cpu().numpy()
+                    predicted_boxes = results.pred_boxes.tensor.cpu().numpy()
+                    predicted_covar_mats = results.pred_boxes_covariance.cpu().numpy()
 
-                        cls_preds = results.pred_cls_probs.cpu().numpy()
-                        predicted_boxes = results.pred_boxes.tensor.cpu().numpy()
-                        predicted_covar_mats = results.pred_boxes_covariance.cpu().numpy()
+                    box_score = np.array([mat.diagonal().prod() for mat in predicted_covar_mats]).mean()
+                    #mean of the max confidence pre detection
+                    if det_cls_score == "entropy":
+                        cls_score = compute_cls_entropy(cls_preds, det_cls_merge_mode) #entropy, mean default
+                    elif det_cls_score == "max_conf":
+                        cls_score = compute_cls_max_conf(cls_preds, det_cls_merge_mode)
+                    else:
+                        raise ValueError('Invalid det_cls_score {}.'.format(det_cls_score))
                         
-                        # combine parallel processes here
+                    box_score_list.append(box_score)
+                    cls_score_list.append(cls_score)
 
-                        box_score = np.array([mat.diagonal().prod() for mat in predicted_covar_mats]).mean()
-                        #mean of the max confidence pre detection
-                        if det_cls_score == "entropy":
-                            cls_score = compute_cls_entropy(cls_preds, det_cls_merge_mode) #entropy, mean default
-                        elif det_cls_score == "max_conf":
-                            cls_score = compute_cls_max_conf(cls_preds, det_cls_merge_mode)
-                        else:
-                            raise ValueError('Invalid det_cls_score {}.'.format(det_cls_score))
+                    pbar.update(1)
 
-                        box_score_list.append(box_score)
-                        cls_score_list.append(cls_score)
+    cls_score_rank = np.array(cls_score_list).argsort().argsort()
+    box_score_rank = (-np.array(box_score_list)).argsort().argsort()
 
-                        pbar.update(1)
-
-        cls_score_rank = np.array(cls_score_list).argsort().argsort()
-        box_score_rank = (-np.array(box_score_list)).argsort().argsort()
-
-        #possible weighted fusion can be added here
-        total_sort = np.argsort((w_cls_score)*cls_score_rank + (1-w_cls_score)*box_score_rank)
-
-
-        if len(trainer.dataset.pool) >= label_per_step:
-            idx_to_label = total_sort[:label_per_step].tolist()
-            trainer.dataset.label(idx_to_label)
-        elif len(trainer.dataset.pool) > 0:
-            trainer.dataset.label_randomly(len(trainer.dataset.pool))
-        else:
-            break
+    #possible weighted fusion can be added here
+    total_sort = np.argsort((w_cls_score)*cls_score_rank + (1-w_cls_score)*box_score_rank)
     
-    
+
+    if len(trainer.dataset.pool) >= label_per_step:
+        idx_to_label = total_sort[:label_per_step].tolist()
+        trainer.dataset.label(idx_to_label)
+    elif len(trainer.dataset.pool) > 0:
+        trainer.dataset.label_randomly(len(trainer.dataset.pool))
+    else:
+        break
     trainer.rebuild_trainer()
     train_step += 1
 

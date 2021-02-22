@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import sys
+
 
 # Detectron imports
 from detectron2.data import MetadataCatalog
@@ -13,7 +15,7 @@ from pycocotools.cocoeval import COCOeval
 from core.setup import setup_config, setup_arg_parser
 
 
-def main(args, cfg=None, inference_output_dir=None):
+def main(args, cfg=None, inference_output_dir=None, to_file=None):
     # Setup config
     if cfg is None:
         cfg = setup_config(args, random_seed=args.random_seed, is_testing=True)
@@ -44,6 +46,9 @@ def main(args, cfg=None, inference_output_dir=None):
     results_api.accumulate()
     results_api.summarize()
 
+    #start piping the stdout her
+
+
     # Compute optimal micro F1 score threshold. We compute the f1 score for
     # every class and score threshold. We then compute the score threshold that
     # maximizes the F-1 score of every class. The final score threshold is the average
@@ -60,6 +65,7 @@ def main(args, cfg=None, inference_output_dir=None):
 
     print("Classification Score at Optimal F-1 Score: {}".format(optimal_score_threshold))
 
+
     text_file_name = os.path.join(
         inference_output_dir,
         'mAP_res.txt')
@@ -67,6 +73,12 @@ def main(args, cfg=None, inference_output_dir=None):
     with open(text_file_name, "w") as text_file:
         print(results_api.stats.tolist() +
               [optimal_score_threshold, ], file=text_file)
+
+    if to_file is not None:
+        with open(to_file, "w") as out_file:
+            print(results_api.stats.tolist() +
+                [optimal_score_threshold, ], file=out_file)
+
 
 
 if __name__ == "__main__":

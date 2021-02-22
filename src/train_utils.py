@@ -45,6 +45,7 @@ from detectron2.engine.train_loop import AMPTrainer, SimpleTrainer, TrainerBase
 # Import baal
 from baal.active import FileDataset, ActiveLearningDataset
 
+
 def compute_cls_entropy(cls_preds, merge="mean"):
     assert len(cls_preds.shape) == 2
     

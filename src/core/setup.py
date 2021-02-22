@@ -136,8 +136,9 @@ def add_probabilistic_config(cfg):
     _C.ACTIVE_LEARNING = CN()
     _C.ACTIVE_LEARNING.START_N = 10000
     _C.ACTIVE_LEARNING.STEP_N = 10000
+    _C.ACTIVE_LEARNING.MAX_STEP = 1000
     _C.ACTIVE_LEARNING.EPOCH = 2
-    _C.ACTIVE_LEARNING.OUT_DIR = "outputs"
+    _C.ACTIVE_LEARNING.OUT_DIR = "outputs/unsorted"
 
     #options "max_conf" "entropy"
     _C.ACTIVE_LEARNING.DET_CLS_SCORE = "max_conf"

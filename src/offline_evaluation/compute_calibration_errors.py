@@ -22,7 +22,8 @@ def main(
         iou_min=None,
         iou_correct=None,
         min_allowed_score=None,
-        inference_output_dir=None):
+        inference_output_dir=None,
+        to_file=None):
     # Setup config
     if cfg is None:
         cfg = setup_config(args, random_seed=args.random_seed, is_testing=True)
@@ -303,6 +304,13 @@ def main(
                        '{:.4f}'.format(reg_min_u_error.cpu().numpy().tolist())])
         print(table)
 
+        if to_file is not None:
+            with open(to_file, "a") as out_file:
+                out_file.write(f"\nCls Marginal Calibration Error: {cls_marginal_calibration_error:.4f}\n")
+                out_file.write(f"Reg Expected Calibration Error: {reg_expected_calibration_error.cpu().numpy().tolist():.4f}\n")
+                out_file.write(f"Reg Maximum Calibration Error: {reg_maximum_calibration_error.cpu().numpy().tolist():.4f}\n")
+                out_file.write(f"Cls Minimum Uncertainty Error: {cls_min_u_error.cpu().numpy().tolist():.4f}\n")
+                out_file.write(f"Reg Minimum Uncertainty Error: {reg_min_u_error.cpu().numpy().tolist():.4f}\n\n")
 
 if __name__ == "__main__":
     # Create arg parser

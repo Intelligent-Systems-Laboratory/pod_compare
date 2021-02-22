@@ -14,6 +14,13 @@ KITTI_THING_CLASSES = ['car', 'person'] # , 'bike'
 KITTI_THING_DATASET_ID_TO_CONTIGUOUS_ID = dict(
     ChainMap(*[{i + 1: i} for i in range(len(KITTI_THING_CLASSES))]))
 
+# background 0
+VOC_THING_CLASSES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
+VOC_THING_DATASET_ID_TO_CONTIGUOUS_ID = dict(
+    ChainMap(*[{i + 1: i} for i in range(len(VOC_THING_CLASSES))]))
+
+
+
 # MAP BDD to KITTI contiguous id to be used for inference on KITTI for models
 # trained on BDD.
 BDD_TO_KITTI_CONTIGUOUS_ID = dict(ChainMap(

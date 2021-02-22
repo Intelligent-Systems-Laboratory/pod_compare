@@ -19,7 +19,91 @@ def setup_all_datasets(dataset_dir):
     setup_bdd_dataset(dataset_dir)
     setup_kitti_dataset(dataset_dir)
     setup_lyft_dataset(dataset_dir)
+    setup_pascal_cocovoc2007(dataset_dir)
+    setup_pascal_cocovoc2012(dataset_dir)
 
+def setup_pascal_cocovoc2012(dataset_dir):
+    train_image_dir = os.path.join(dataset_dir, 'JPEGImages')
+    val_image_dir = os.path.join(dataset_dir, 'JPEGImages')
+    trainval_image_dir = os.path.join(dataset_dir, 'JPEGImages')
+
+    train_json_annotations = os.path.join(dataset_dir, 'coco_labels', 'train.json')
+    val_json_annotations = os.path.join(dataset_dir, 'coco_labels', 'val.json')
+    trainval_json_annotations = os.path.join(dataset_dir, 'coco_labels', 'trainval.json')
+
+    register_coco_instances(
+        "cocovoc2012_train",
+        {},
+        train_json_annotations,
+        train_image_dir)
+    MetadataCatalog.get("cocovoc2012_train").thing_classes = metadata.VOC_THING_CLASSES
+    MetadataCatalog.get(
+        "cocovoc2012_train").thing_dataset_id_to_contiguous_id = metadata.VOC_THING_DATASET_ID_TO_CONTIGUOUS_ID
+
+    register_coco_instances(
+        "cocovoc2012_val",
+        {},
+        val_json_annotations,
+        val_image_dir)
+    MetadataCatalog.get("cocovoc2012_val").thing_classes = metadata.VOC_THING_CLASSES
+    MetadataCatalog.get(
+        "cocovoc2012_val").thing_dataset_id_to_contiguous_id = metadata.VOC_THING_DATASET_ID_TO_CONTIGUOUS_ID
+
+    register_coco_instances(
+        "cocovoc2012_trainval",
+        {},
+        trainval_json_annotations,
+        trainval_image_dir)
+    MetadataCatalog.get("cocovoc2012_trainval").thing_classes = metadata.VOC_THING_CLASSES
+    MetadataCatalog.get(
+        "cocovoc2012_trainval").thing_dataset_id_to_contiguous_id = metadata.VOC_THING_DATASET_ID_TO_CONTIGUOUS_ID
+
+def setup_pascal_cocovoc2007(dataset_dir):
+    train_image_dir = os.path.join(dataset_dir, 'JPEGImages')
+    val_image_dir = os.path.join(dataset_dir, 'JPEGImages')
+    trainval_image_dir = os.path.join(dataset_dir, 'JPEGImages')
+    test_image_dir = os.path.join(dataset_dir, 'JPEGImages')
+
+    train_json_annotations = os.path.join(dataset_dir, 'coco_labels', 'train.json')
+    val_json_annotations = os.path.join(dataset_dir, 'coco_labels', 'val.json')
+    trainval_json_annotations = os.path.join(dataset_dir, 'coco_labels', 'trainval.json')
+    test_json_annotations = os.path.join(dataset_dir, 'coco_labels', 'test.json')
+
+    register_coco_instances(
+        "cocovoc2007_train",
+        {},
+        train_json_annotations,
+        train_image_dir)
+    MetadataCatalog.get("cocovoc2007_train").thing_classes = metadata.VOC_THING_CLASSES
+    MetadataCatalog.get(
+        "cocovoc2007_train").thing_dataset_id_to_contiguous_id = metadata.VOC_THING_DATASET_ID_TO_CONTIGUOUS_ID
+
+    register_coco_instances(
+        "cocovoc2007_val",
+        {},
+        val_json_annotations,
+        val_image_dir)
+    MetadataCatalog.get("cocovoc2007_val").thing_classes = metadata.VOC_THING_CLASSES
+    MetadataCatalog.get(
+        "cocovoc2007_val").thing_dataset_id_to_contiguous_id = metadata.VOC_THING_DATASET_ID_TO_CONTIGUOUS_ID
+
+    register_coco_instances(
+        "cocovoc2007_trainval",
+        {},
+        trainval_json_annotations,
+        trainval_image_dir)
+    MetadataCatalog.get("cocovoc2007_trainval").thing_classes = metadata.VOC_THING_CLASSES
+    MetadataCatalog.get(
+        "cocovoc2007_trainval").thing_dataset_id_to_contiguous_id = metadata.VOC_THING_DATASET_ID_TO_CONTIGUOUS_ID
+
+    register_coco_instances(
+        "cocovoc2007_test",
+        {},
+        val_json_annotations,
+        val_image_dir)
+    MetadataCatalog.get("cocovoc2007_test").thing_classes = metadata.VOC_THING_CLASSES
+    MetadataCatalog.get(
+        "cocovoc2007_test").thing_dataset_id_to_contiguous_id = metadata.VOC_THING_DATASET_ID_TO_CONTIGUOUS_ID
 
 def setup_bdd_dataset(dataset_dir):
     """

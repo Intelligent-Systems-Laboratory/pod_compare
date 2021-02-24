@@ -26,116 +26,13 @@ from probabilistic_inference.inference_utils import instances_to_json
 
 from train_utils import ActiveTrainer, compute_cls_entropy, compute_cls_max_conf
 
+from mp_utils import parallel_predict
 import concurrent.futures
 import time
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
 
-
-def split_list(a, n):
-    k, m = divmod(len(a), n)
-    return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
-
-def model_predict(cfg, model_full_path, cat_mapping_dict, dataset, gpu_num):
-
-    torch.cuda.set_device(gpu_num)
-
-    print(f"processing {len(dataset)} images  running in {torch.cuda.current_device()}")
-
-    #load model and weights
-    model = build_model(cfg)
-    DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(model_full_path, resume=False)
-    predictor = build_predictor(cfg, model)
-
-    
-
-    #setup scoring configs
-    det_cls_score = cfg.ACTIVE_LEARNING.DET_CLS_SCORE
-    det_cls_merge_mode = cfg.ACTIVE_LEARNING.DET_CLS_MERGE_MODE
-
-    mapper = DatasetMapper(cfg, False)
-    if isinstance(dataset, list):
-        dataset = DatasetFromList(dataset, copy=False)
-    if mapper is not None:
-        dataset = MapDataset(dataset, mapper)
-    sampler = InferenceSampler(len(dataset))
-    batch_sampler = torch.utils.data.sampler.BatchSampler(sampler, 1, drop_last=False)
-    num_workers = 16
-    data_loader = torch.utils.data.DataLoader(
-        dataset,
-        num_workers=num_workers,
-        batch_sampler=batch_sampler,
-        collate_fn=trivial_batch_collator,
-    )
-
-        
-    output_list = []
-    cls_score_list = []
-    box_score_list = []
-
-    with torch.no_grad():
-        with tqdm.tqdm(total=len(data_loader)) as pbar:
-            for idx, input_im in enumerate(data_loader):
-                outputs = predictor(input_im)
-                cls_preds = outputs.pred_cls_probs.cpu().numpy()
-                predicted_boxes = outputs.pred_boxes.tensor.cpu().numpy()
-                predicted_covar_mats = outputs.pred_boxes_covariance.cpu().numpy()
-
-                # combine parallel processes here
-                box_score = np.array([mat.diagonal().prod() for mat in predicted_covar_mats]).mean()
-                #mean of the max confidence pre detection
-                if det_cls_score == "entropy":
-                    cls_score = compute_cls_entropy(cls_preds, det_cls_merge_mode) #entropy, mean default
-                elif det_cls_score == "max_conf":
-                    cls_score = compute_cls_max_conf(cls_preds, det_cls_merge_mode)
-                else:
-                    raise ValueError('Invalid det_cls_score {}.'.format(det_cls_score))
-                box_score_list.append(box_score)
-                cls_score_list.append(cls_score)
-                output_list.extend(instances_to_json(outputs, input_im[0]['image_id'], cat_mapping_dict))
-
-                pbar.update(1)
-                
-    return {'output_list': output_list, 'cls_score_list':cls_score_list, 'box_score_list':box_score_list}
-
-def trivial_batch_collator(batch):
-        """
-        A batch collator that does nothing.
-        """
-        return batch
-
-def parallel_predict(cfg, model_path, cat_mapping_dict, dataset, process_gpu_list):
-    start = time.perf_counter()
-
-    final_output_list = []
-    cls_score_list = []
-    box_score_list = []
-    # prepare args
-    cfgs = [cfg for _ in range(len(process_gpu_list))]
-    model_paths = [model_path for _ in range(len(process_gpu_list))]
-    cat_mapping_dicts = [cat_mapping_dict for _ in range(len(process_gpu_list))]
-    #dataset = dataset[:100]
-    datasets = list(split_list(dataset, len(process_gpu_list)))
-
-    ctx = mp.get_context("spawn")
-    with concurrent.futures.ProcessPoolExecutor(mp_context=ctx) as executor:
-        results = executor.map(model_predict, cfgs, model_paths, cat_mapping_dicts, datasets, process_gpu_list)
-
-        for result in results:
-            final_output_list.extend(result['output_list'])
-            cls_score_list.extend(result['cls_score_list'])
-            box_score_list.extend(result['box_score_list'])
-
-    finish = time.perf_counter()
-    print(f'Finished in {round(finish-start, 2)} second(s)')
-    print(f'length od cls_score_list {len(cls_score_list)}')
-    
-    return final_output_list, cls_score_list, box_score_list
 
 if __name__ == "__main__": 
     ##setup inference args, this also contains all the training args
@@ -227,11 +124,11 @@ if __name__ == "__main__":
 
     #process_gpu_list = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3]
 
-    process_gpu_list = [0, 0, 1, 1, 2, 2, 3, 3]
+    #process_gpu_list = [0, 0, 1, 1, 2, 2, 3, 3]
 
     #process_gpu_list = [2, 2, 2, 2, 3, 3, 3, 3]
 
-    #process_gpu_list = [0, 1, 2, 3]
+    process_gpu_list = [0, 1, 2, 3]
 
     for model_path in model_path_list:
 
@@ -251,7 +148,7 @@ if __name__ == "__main__":
         else None,
         )
 
-        final_output_list, cls_score_list, box_output_list = parallel_predict(cfg, full_path, cat_mapping_dict, dataset, process_gpu_list)
+        final_output_list, cls_score_list, box_score_list = parallel_predict(cfg, full_path, cat_mapping_dict, dataset, process_gpu_list)
 
         with open(os.path.join(inference_output_dir, 'coco_instances_results.json'), 'w') as fp:
             json.dump(final_output_list, fp, indent=4,

@@ -28,11 +28,14 @@ arg_parser = setup_arg_parser()
 args = arg_parser.parse_args("")
 # Support single gpu inference only.
 args.num_gpus = 1
-args.dataset_dir = '/public-dataset/BDD/bdd100k'
-args.test_dataset = 'bdd_val'
-args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/BDD-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml'
+#args.dataset_dir = '/public-dataset/BDD/bdd100k'
+#args.test_dataset = 'bdd_val'
+args.dataset_dir = '~/datasets/VOC2012'
+args.test_dataset = 'voc2012_no_bg_val'
+#args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/BDD-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml'
+args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/VOC-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml'
 args.inference_config = '/home/richard.tanai/cvpr2/pod_compare/src/configs/Inference/bayes_od_mc_dropout.yaml'
-args.random_seed = 4000
+args.random_seed = 1000
 args.resume=False
 print("Command Line Args:", args)
 
@@ -66,8 +69,9 @@ copyfile(args.inference_config, os.path.join(
     inference_output_dir, os.path.split(args.inference_config)[-1]))
 
 # Get category mapping dictionary:
+#train_thing_dataset_id_to_contiguous_id = MetadataCatalog.get(cfg.DATASETS.TRAIN[0]).thing_dataset_id_to_contiguous_id
 train_thing_dataset_id_to_contiguous_id = MetadataCatalog.get(
-    cfg.DATASETS.TRAIN[0]).thing_dataset_id_to_contiguous_id
+        cfg.DATASETS.TRAIN[0]).thing_dataset_id_to_contiguous_id
 test_thing_dataset_id_to_contiguous_id = MetadataCatalog.get(
     args.test_dataset).thing_dataset_id_to_contiguous_id
 
@@ -99,7 +103,7 @@ model = build_model(cfg)
 test_data_loader = build_detection_test_loader(
         cfg, dataset_name=args.test_dataset)
 
-output_dir = "outputs_10k_cls1_only"
+output_dir = cfg.ACTIVE_LEARNING.OUT_DIR
 
 output_results_dir = os.path.join(output_dir,"eval_results")
 
@@ -107,6 +111,11 @@ os.makedirs(output_results_dir,exist_ok=True)
 
 model_path_list = os.listdir(output_dir)
 for model_path in model_path_list:
+
+    if 'checkpoint_step12.pth' not in model_path:
+        print(f"{model_path} Not a Model")
+        continue
+
     full_path = os.path.join(output_dir,model_path)
     DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             full_path, resume=False)
@@ -136,7 +145,7 @@ for model_path in model_path_list:
         with open(os.path.join(inference_output_dir, 'coco_instances_results.json'), 'w') as fp:
             json.dump(final_output_list, fp, indent=4,
                       separators=(',', ': '))
-
+    #when running the eval at the same time, make sure that different cfg file is used per process that is run
     out_file = os.path.join(output_results_dir,model_path.split('.')[0]+'_results.txt')
     compute_average_precision.main(args, cfg, to_file=out_file)
     compute_probabilistic_metrics.main(args, cfg, to_file=out_file)

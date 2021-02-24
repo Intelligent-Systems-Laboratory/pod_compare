@@ -49,15 +49,25 @@ from baal.active import FileDataset, ActiveLearningDataset
 def compute_cls_entropy(cls_preds, merge="mean"):
     assert len(cls_preds.shape) == 2
     
+    print(cls_preds.shape)
+
     ent = np.array([])
     for det_preds in cls_preds:
         ent = np.append(ent, (-det_preds*np.log(det_preds)).sum())
 
-    if merge == "mean":        
-        return ent.mean()
+    if merge == "mean":
+        if len(ent) < 1:
+            #no detection
+            return 0
+        else:        
+            return ent.mean()
     
     elif merge == "max":
-        return ent.max()
+        if len(ent) < 1:
+            #no detection
+            return 0
+        else:        
+            return ent.max()
     
     else:
         raise ValueError('Invalid detection merge mode for entropy {}.'.format(merge))
@@ -66,7 +76,6 @@ def compute_cls_max_conf(cls_preds, merge="mean"):
     assert len(cls_preds.shape) == 2
     
     if merge == "mean":
-        
         return cls_preds.max(axis=1).mean()
     
     elif merge == "max":
@@ -136,6 +145,9 @@ class ActiveTrainer(TrainerBase):
         self.cfg = cfg
         # Assume these objects must be constructed in this order.
         #model = self.build_model(cfg)
+
+        
+
         self.model_start = model
 
         # dataset things

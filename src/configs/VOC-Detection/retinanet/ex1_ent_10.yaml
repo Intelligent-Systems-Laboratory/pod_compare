@@ -17,14 +17,14 @@ MODEL:
 
 ACTIVE_LEARNING:
     # starting number of randomly labeled images in the training set
-    MAX_STEP: 3
+    MAX_STEP: 11
 
-    START_N: 1000
+    START_N: 5000
     # number of images, that will be labeled per active learning step
-    STEP_N: 1000
+    STEP_N: 100
     # active learning training epoch per step
     # used to calculate the max iter for the detectron training step
-    EPOCH: 1
+    EPOCH: 18
 
     # type of cls score for each detection in one image
     # "max_conf", "entropy" "random"
@@ -40,4 +40,4 @@ ACTIVE_LEARNING:
     # weight of the cls score and box score of the image
     W_CLS_SCORE: 0.5
 
-    OUT_DIR: "outputs/ent_10"
+    OUT_DIR: "outputs/ex1_ent_10"

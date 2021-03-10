@@ -2,6 +2,7 @@ import json
 import numpy as np
 import os
 import torch
+import time
 import tqdm
 from shutil import copyfile
 
@@ -29,8 +30,8 @@ args = arg_parser.parse_args("")
 # Support single gpu inference only.
 args.num_gpus = 1
 args.dataset_dir = '~/datasets/VOC2012'
-args.test_dataset = 'voc2012_no_bg_val'
-args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/VOC-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml'
+args.test_dataset = 'cocovoc_2012'
+args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/VOC-Detection/retinanet/ex1_ent_d20.yaml'
 args.inference_config = '/home/richard.tanai/cvpr2/pod_compare/src/configs/Inference/bayes_od_mc_dropout.yaml'
 args.random_seed = 1000
 args.resume=False
@@ -91,9 +92,11 @@ out_dir = cfg.ACTIVE_LEARNING.OUT_DIR
 det_cls_score = cfg.ACTIVE_LEARNING.DET_CLS_SCORE
 det_cls_merge_mode = cfg.ACTIVE_LEARNING.DET_CLS_MERGE_MODE
 w_cls_score = cfg.ACTIVE_LEARNING.W_CLS_SCORE
+max_dets = cfg.ACTIVE_LEARNING.MAX_DETS
 
 os.makedirs(out_dir, exist_ok=True)
 
+start = time.perf_counter()
 
 while(1):
     print(f"performing train step {train_step}")
@@ -133,6 +136,12 @@ while(1):
                         cls_preds = results.pred_cls_probs.cpu().numpy()
                         predicted_boxes = results.pred_boxes.tensor.cpu().numpy()
                         predicted_covar_mats = results.pred_boxes_covariance.cpu().numpy()
+
+
+                        if len(cls_preds) > max_dets:
+                            cls_preds = cls_preds[:max_dets]
+                            predicted_boxes = predicted_boxes[:max_dets]
+                            predicted_covar_mats = predicted_covar_mats[:max_dets]
                         
                         # combine parallel processes here
 
@@ -169,3 +178,5 @@ while(1):
     trainer.rebuild_trainer()
     train_step += 1
 
+finish = time.perf_counter()
+print(f'Active Learning Loop finished in {round(finish-start, 2)} second(s)')

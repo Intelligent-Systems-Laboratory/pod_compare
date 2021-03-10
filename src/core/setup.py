@@ -145,6 +145,8 @@ def add_probabilistic_config(cfg):
     _C.ACTIVE_LEARNING.DET_CLS_MERGE_MODE = "mean"
 
     _C.ACTIVE_LEARNING.W_CLS_SCORE = 0.5
+
+    _C.ACTIVE_LEARNING.MAX_DETS = 20
     # epoch should be 4.5
 
 

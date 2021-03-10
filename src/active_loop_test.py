@@ -31,9 +31,9 @@ args.num_gpus = 1
 #args.dataset_dir = '/public-dataset/BDD/bdd100k'
 #args.test_dataset = 'bdd_val'
 args.dataset_dir = '~/datasets/VOC2012'
-args.test_dataset = 'voc2012_no_bg_val'
+args.test_dataset = 'cocovoc2012_val'
 #args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/BDD-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml'
-args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/VOC-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml'
+args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/VOC-Detection/retinanet/random_10.yaml'
 args.inference_config = '/home/richard.tanai/cvpr2/pod_compare/src/configs/Inference/bayes_od_mc_dropout.yaml'
 args.random_seed = 1000
 args.resume=False
@@ -112,7 +112,7 @@ os.makedirs(output_results_dir,exist_ok=True)
 model_path_list = os.listdir(output_dir)
 for model_path in model_path_list:
 
-    if 'checkpoint_step12.pth' not in model_path:
+    if '.pth' not in model_path:
         print(f"{model_path} Not a Model")
         continue
 

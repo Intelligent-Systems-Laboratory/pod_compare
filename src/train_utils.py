@@ -49,7 +49,7 @@ from baal.active import FileDataset, ActiveLearningDataset
 def compute_cls_entropy(cls_preds, merge="mean"):
     assert len(cls_preds.shape) == 2
     
-    print(cls_preds.shape)
+    #print(cls_preds.shape)
 
     ent = np.array([])
     for det_preds in cls_preds:

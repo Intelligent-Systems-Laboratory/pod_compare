@@ -15,3 +15,7 @@ src/.ipynb_checkpoints/inference-checkpoint.ipynb
 src/.ipynb_checkpoints/active_loop-checkpoint.ipynb
 src/.ipynb_checkpoints/Untitled-checkpoint.ipynb
 src/output*
+
+*.pth
+
+src/old/*

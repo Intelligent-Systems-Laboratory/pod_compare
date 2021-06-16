@@ -17,16 +17,14 @@ MODEL:
 
 ACTIVE_LEARNING:
     # starting number of randomly labeled images in the training set
-    MAX_STEP: 6
+    MAX_STEP: 3
 
     START_N: 5000
     # number of images, that will be labeled per active learning step
     STEP_N: 100
     # active learning training epoch per step
     # used to calculate the max iter for the detectron training step
-    EPOCH: 18
-
-    #reset
+    EPOCH: 6
 
     # type of cls score for each detection in one image
     # "max_conf", "entropy" "random"
@@ -42,6 +40,10 @@ ACTIVE_LEARNING:
     # weight of the cls score and box score of the image
     W_CLS_SCORE: 0.5
 
-    MAX_DETS: 20
+    MAX_DETS: 10
+    ##hello
+    RESET: "reset"
 
-    OUT_DIR: "outputs/ex2_ent_d20"
+    OUT_DIR: "outputs/ex4_ent_d10_reset2"
+
+    ##log: this is the testing for small epoch just to verify the gradient flushing

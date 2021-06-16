@@ -5,6 +5,8 @@ import torch
 import time
 import tqdm
 from shutil import copyfile
+from copy import deepcopy
+import cv2
 
 # Detectron imports
 from detectron2.engine import launch
@@ -31,7 +33,7 @@ args = arg_parser.parse_args("")
 args.num_gpus = 1
 args.dataset_dir = '~/datasets/VOC2012'
 args.test_dataset = 'cocovoc_2012'
-args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/VOC-Detection/retinanet/ex3_ent_d20.yaml'
+args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/VOC-Detection/retinanet/ex6_rnd_reset.yaml'
 args.inference_config = '/home/richard.tanai/cvpr2/pod_compare/src/configs/Inference/bayes_od_mc_dropout.yaml'
 args.random_seed = 1000
 args.resume=False
@@ -66,22 +68,24 @@ copyfile(args.inference_config, os.path.join(
 
 
 # Build predictor
-model = build_model(cfg)
+#model = build_model(cfg)
 
-DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
-            cfg.MODEL.WEIGHTS, resume=False)
+#DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(cfg.MODEL.WEIGHTS, resume=False)
 
 #DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
 #            "/home/richard.tanai/cvpr2/pod_compare/src/outputs2/checkpoint_step6.pth", resume=False)
             
 
-trainer = ActiveTrainer(cfg, model)
+trainer = ActiveTrainer(cfg)
 #trainer.resume_or_load(resume=True)
 
 # 10000 is already started in the init using cfg
 # epoch is 20, just an arbitrary number lol
 
 ## active learning loop configurables
+
+#copy weights
+#initial_weights = deepcopy(model.state_dict())
 
 train_step = 1
 
@@ -93,15 +97,23 @@ det_cls_score = cfg.ACTIVE_LEARNING.DET_CLS_SCORE
 det_cls_merge_mode = cfg.ACTIVE_LEARNING.DET_CLS_MERGE_MODE
 w_cls_score = cfg.ACTIVE_LEARNING.W_CLS_SCORE
 max_dets = cfg.ACTIVE_LEARNING.MAX_DETS
+reset = cfg.ACTIVE_LEARNING.RESET
+#n_images = cfg.ACTIVE_LEARNING.IMG_SAVE_N
+img_top_n = cfg.ACTIVE_LEARNING.IMG_TOP_N
+img_bot_n = cfg.ACTIVE_LEARNING.IMG_BOT_N
 
 os.makedirs(out_dir, exist_ok=True)
+
+img_dir = os.path.join(out_dir,"img")
+
+os.makedirs(img_dir, exist_ok=True)
 
 start = time.perf_counter()
 
 while(1):
     print(f"performing train step {train_step}")
     trainer.train()
-    torch.save(model.state_dict(), f"{out_dir}/checkpoint_step{train_step}.pth")
+    torch.save(trainer.model.state_dict(), f"{out_dir}/checkpoint_step{train_step}.pth")
 
     if len(trainer.dataset.pool) <= 0 or train_step >= max_step:
         print("training completed")
@@ -112,8 +124,12 @@ while(1):
     final_output_list = []
     cls_score_list = []
     box_score_list = []
+    image_list = []
 
-    predictor = build_predictor(cfg, model)
+    img_dir_step = os.path.join(img_dir,f"{train_step}")
+    os.makedirs(img_dir_step,exist_ok=True)
+
+    predictor = build_predictor(cfg, trainer.model)
 
     if det_cls_score == 'random':
         if len(trainer.dataset.pool) >= label_per_step:
@@ -129,9 +145,14 @@ while(1):
                 with tqdm.tqdm(total=len(pool_loader)) as pbar:
                     for idx, input_im in enumerate(pool_loader):
                         #print(input_im.size)
-                        outputs = predictor(input_im)
+                        
 
-                        results = outputs
+
+                        results = predictor(input_im)
+                        
+                        if img_top_n > 0 or img_bot_n > 0:
+                            image_list.append(predictor.visualize_inference(input_im,results))
+                        #outputs = results
 
                         cls_preds = results.pred_cls_probs.cpu().numpy()
                         predicted_boxes = results.pred_boxes.tensor.cpu().numpy()
@@ -164,17 +185,54 @@ while(1):
 
         #possible weighted fusion can be added here
         total_sort = np.argsort((w_cls_score)*cls_score_rank + (1-w_cls_score)*box_score_rank)
+        idx_to_label = total_sort[:label_per_step].tolist()
 
+
+        if img_top_n > 0:
+
+            img_dir_step_top = os.path.join(img_dir_step,"top_n")
+            os.makedirs(img_dir_step_top, exist_ok=True)
+                
+            if img_top_n > len(total_sort):
+                top_n_idx = total_sort.tolist()
+            else:
+                top_n_idx = total_sort[:img_top_n].tolist()
+
+            for i, idx in enumerate(top_n_idx):
+                img = image_list[idx]
+                img_full_path = os.path.join(img_dir_step_top,f"top_n_{i}.jpg")
+                cv2.imwrite(img_full_path,img)
+
+        
+        if img_bot_n > 0:
+
+            img_dir_step_bot = os.path.join(img_dir_step,"bot_n")
+            os.makedirs(img_dir_step_bot, exist_ok=True)
+
+            if img_bot_n > len(total_sort):
+                bot_n_idx = total_sort.tolist()
+            else:
+                bot_n_idx = total_sort[-img_bot_n:].tolist()
+
+            for i, idx in enumerate(bot_n_idx):
+                img = image_list[idx]
+                img_full_path = os.path.join(img_dir_step_bot,f"bot_n_{i}.jpg")
+                cv2.imwrite(img_full_path,img)
 
         if len(trainer.dataset.pool) >= label_per_step:
-            idx_to_label = total_sort[:label_per_step].tolist()
             trainer.dataset.label(idx_to_label)
         elif len(trainer.dataset.pool) > 0:
+            #label what is left
             trainer.dataset.label_randomly(len(trainer.dataset.pool))
         else:
             break
     
-    
+    if reset == "reset":
+        #model.load_state_dict(initial_weights)
+        #trainer.optimizer.zero_grad()
+        trainer.rebuild_everything()
+
+
     trainer.rebuild_trainer()
     train_step += 1
 

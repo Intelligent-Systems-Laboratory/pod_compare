@@ -54,10 +54,12 @@ class ProbabilisticPredictor(ABC):
         self.num_mc_dropout_runs = self.cfg.PROBABILISTIC_INFERENCE.MC_DROPOUT.NUM_RUNS
 
         # Set model to train for MC-Dropout runs
-        if self.mc_dropout_enabled:
-            self.model.train()
-        else:
-            self.model.eval()
+        #if self.mc_dropout_enabled:
+        #    self.model.train()
+        #else:
+        #    self.model.eval()
+
+        self.model.eval()
 
         # Create ensemble if applicable.
         if self.inference_mode == 'ensembles':

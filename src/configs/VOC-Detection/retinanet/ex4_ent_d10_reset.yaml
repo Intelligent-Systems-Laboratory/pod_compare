@@ -26,8 +26,6 @@ ACTIVE_LEARNING:
     # used to calculate the max iter for the detectron training step
     EPOCH: 18
 
-    #reset
-
     # type of cls score for each detection in one image
     # "max_conf", "entropy" "random"
     DET_CLS_SCORE: "entropy"
@@ -42,6 +40,8 @@ ACTIVE_LEARNING:
     # weight of the cls score and box score of the image
     W_CLS_SCORE: 0.5
 
-    MAX_DETS: 20
+    MAX_DETS: 10
+    ##hello
+    RESET: "reset"
 
-    OUT_DIR: "outputs/ex2_ent_d20"
+    OUT_DIR: "outputs/ex4_ent_d10_reset"

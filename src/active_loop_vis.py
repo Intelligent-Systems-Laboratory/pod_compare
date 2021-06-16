@@ -1,10 +1,12 @@
 import json
-import shutil
+import numpy as np
 import os
 import torch
+import time
 import tqdm
 from shutil import copyfile
-
+from copy import deepcopy
+import cv2
 # Detectron imports
 from detectron2.engine import launch
 from detectron2.checkpoint import DetectionCheckpointer
@@ -18,6 +20,8 @@ from core.setup import setup_config, setup_arg_parser
 from offline_evaluation import compute_average_precision, compute_probabilistic_metrics, compute_calibration_errors
 from probabilistic_inference.probabilistic_inference import build_predictor
 from probabilistic_inference.inference_utils import instances_to_json
+
+from train_utils import ActiveTrainer, compute_cls_entropy, compute_cls_max_conf
 
 from train_utils import ActiveTrainer
 
@@ -33,7 +37,7 @@ args.num_gpus = 1
 args.dataset_dir = '~/datasets/VOC2012'
 args.test_dataset = 'cocovoc2012_val'
 #args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/BDD-Detection/retinanet/retinanet_R_50_FPN_1x_reg_cls_var_dropout.yaml'
-args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/VOC-Detection/retinanet/ex6_ent_d10_reset_full.yaml'
+args.config_file = '/home/richard.tanai/cvpr2/pod_compare/src/configs/VOC-Detection/retinanet/ex3_ent_d10.yaml'
 args.inference_config = '/home/richard.tanai/cvpr2/pod_compare/src/configs/Inference/bayes_od_mc_dropout.yaml'
 args.random_seed = 1000
 args.resume=False
@@ -110,9 +114,30 @@ output_results_dir = os.path.join(output_dir,"eval_results")
 os.makedirs(output_results_dir,exist_ok=True)
 
 model_path_list = os.listdir(output_dir)
+
+img_outdir = "img_out5"
+
+os.makedirs(img_outdir,exist_ok=True)
+
+
+train_step = 1
+
+
+max_step = cfg.ACTIVE_LEARNING.MAX_STEP
+label_per_step = cfg.ACTIVE_LEARNING.STEP_N
+out_dir = cfg.ACTIVE_LEARNING.OUT_DIR
+det_cls_score = cfg.ACTIVE_LEARNING.DET_CLS_SCORE
+det_cls_merge_mode = cfg.ACTIVE_LEARNING.DET_CLS_MERGE_MODE
+w_cls_score = cfg.ACTIVE_LEARNING.W_CLS_SCORE
+max_dets = cfg.ACTIVE_LEARNING.MAX_DETS
+reset = cfg.ACTIVE_LEARNING.RESET
+
+img_top_n = cfg.ACTIVE_LEARNING.IMG_TOP_N
+img_bot_n = cfg.ACTIVE_LEARNING.IMG_BOT_N
+
 for model_path in model_path_list:
 
-    if '.pth' not in model_path:
+    if 'step6.pth' not in model_path:
         print(f"{model_path} Not a Model")
         continue
 
@@ -125,6 +150,11 @@ for model_path in model_path_list:
     #results_dir = inference_output_dir + "/" + model_path
 
     final_output_list = []
+    image_list = []
+    cls_score_list = []
+    box_score_list = []
+
+    num_img = 0
     if not args.eval_only:
         with torch.no_grad():
             with tqdm.tqdm(total=len(test_data_loader)) as pbar:
@@ -132,26 +162,73 @@ for model_path in model_path_list:
                     #print(input_im.size)
                     outputs = predictor(input_im)
 
+                    results = outputs
+
                     final_output_list.extend(
                         instances_to_json(
                             outputs,
                             input_im[0]['image_id'],
                             cat_mapping_dict))
-                    pbar.update(1)
 
+                    image_list.append(predictor.visualize_inference(input_im,outputs))
+
+                    cls_preds = results.pred_cls_probs.cpu().numpy()
+                    predicted_boxes = results.pred_boxes.tensor.cpu().numpy()
+                    predicted_covar_mats = results.pred_boxes_covariance.cpu().numpy()
+                    if len(cls_preds) > max_dets:
+                        cls_preds = cls_preds[:max_dets]
+                        predicted_boxes = predicted_boxes[:max_dets]
+                        predicted_covar_mats = predicted_covar_mats[:max_dets]
+                    
+                    # combine parallel processes here
+                    box_score = np.array([mat.diagonal().prod() for mat in predicted_covar_mats]).mean()
+                    #mean of the max confidence pre detection
+                    if det_cls_score == "entropy":
+                        cls_score = compute_cls_entropy(cls_preds, det_cls_merge_mode) #entropy, mean default
+                    elif det_cls_score == "max_conf":
+                        cls_score = compute_cls_max_conf(cls_preds, det_cls_merge_mode)
+                    else:
+                        raise ValueError('Invalid det_cls_score {}.'.format(det_cls_score))
+                    box_score_list.append(box_score)
+                    cls_score_list.append(cls_score)
+                    pbar.update(1)
+                    
+                    #num_img = num_img + 1s
+                    #if num_img > 30:
+                    #    break
+
+    cls_score_rank = np.array(cls_score_list).argsort().argsort()
+    box_score_rank = (-np.array(box_score_list)).argsort().argsort()
+    #possible weighted fusion can be added here
+    total_sort = np.argsort((w_cls_score)*cls_score_rank + (1-w_cls_score)*box_score_rank)
+    
+    idx_to_label = total_sort[:label_per_step].tolist()
+    top_10_idx = total_sort[:20].tolist()
+    bot_10_idx = total_sort[-20:].tolist()
+
+    for i, idx in enumerate(top_10_idx):
+        img = image_list[idx]
+        img_full_path = img_outdir + "/top10_" + str(i) + ".jpg" 
+        cv2.imwrite(img_full_path,img)
+
+    for i, idx in enumerate(bot_10_idx):
+        img = image_list[idx]
+        img_full_path = img_outdir + "/bot10_" + str(i) + ".jpg" 
+        cv2.imwrite(img_full_path,img)
+        
                         
 
 
-        with open(os.path.join(inference_output_dir, 'coco_instances_results.json'), 'w') as fp:
-            json.dump(final_output_list, fp, indent=4,
-                      separators=(',', ': '))
+        #with open(os.path.join(inference_output_dir, 'coco_instances_results.json'), 'w') as fp:
+        #    json.dump(final_output_list, fp, indent=4,
+        #              separators=(',', ': '))
     #when running the eval at the same time, make sure that different cfg file is used per process that is run
-    out_file = os.path.join(output_results_dir,model_path.split('.')[0]+'_results.txt')
-    compute_average_precision.main(args, cfg, to_file=out_file)
-    compute_probabilistic_metrics.main(args, cfg, to_file=out_file)
-    compute_calibration_errors.main(args, cfg, to_file=out_file)
+    #out_file = os.path.join(output_results_dir,model_path.split('.')[0]+'_results.txt')
+    #compute_average_precision.main(args, cfg, to_file=out_file)
+    #compute_probabilistic_metrics.main(args, cfg, to_file=out_file)
+    #compute_calibration_errors.main(args, cfg, to_file=out_file)
 
-    shutil.move(os.path.join(inference_output_dir, 'coco_instances_results.json'), os.path.join(output_results_dir, f"{model_path.split('.')[0]}_coco_results.json"))
+    #shutil.move(os.path.join(inference_output_dir, 'coco_instances_results.json'), os.path.join(output_results_dir, f"{model_path.split('.')[0]}_coco_results.json"))
 
     # mv coco_results to coco_result_step_1
 

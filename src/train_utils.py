@@ -2,6 +2,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import numpy as np
 import argparse
+from copy import deepcopy
 import logging
 import os
 import sys
@@ -48,8 +49,6 @@ from baal.active import FileDataset, ActiveLearningDataset
 
 def compute_cls_entropy(cls_preds, merge="mean"):
     assert len(cls_preds.shape) == 2
-    
-    #print(cls_preds.shape)
 
     ent = np.array([])
     for det_preds in cls_preds:
@@ -68,7 +67,6 @@ def compute_cls_entropy(cls_preds, merge="mean"):
             return 0
         else:        
             return ent.max()
-    
     else:
         raise ValueError('Invalid detection merge mode for entropy {}.'.format(merge))
 
@@ -131,7 +129,7 @@ class ActiveTrainer(TrainerBase):
         cfg (CfgNode):
     """
 
-    def __init__(self, cfg, model):
+    def __init__(self, cfg):
         """
         Args:
             cfg (CfgNode):
@@ -148,7 +146,12 @@ class ActiveTrainer(TrainerBase):
 
         
 
-        self.model_start = model
+
+        self.model_start = build_model(cfg)
+
+        DetectionCheckpointer(self.model_start, save_dir=cfg.OUTPUT_DIR).resume_or_load(cfg.MODEL.WEIGHTS, resume=False)
+
+        self.initial_weights = deepcopy(self.model_start.state_dict())
 
         # dataset things
         self.dataset = self.build_active_dataset(cfg)
@@ -157,19 +160,9 @@ class ActiveTrainer(TrainerBase):
         sampler_name = cfg.DATALOADER.SAMPLER_TRAIN
         logger = logging.getLogger(__name__)
         logger.info("Using training sampler {}".format(sampler_name))
-        if sampler_name == "TrainingSampler":
-            self.sampler = TrainingSampler(len(self.dataset))
-        elif sampler_name == "RepeatFactorTrainingSampler":
-            repeat_factors = RepeatFactorTrainingSampler.repeat_factors_from_category_frequency(
-                self.dataset, cfg.DATALOADER.REPEAT_THRESHOLD
-            )
-            self.sampler = RepeatFactorTrainingSampler(repeat_factors)
-        else:
-            raise ValueError("Unknown training sampler: {}".format(sampler_name))
 
 
-
-        self.optimizer_start = self.build_optimizer(cfg, model)
+        self.optimizer_start = self.build_optimizer(cfg, self.model_start)
         self.active_step = 0
 
         self.rebuild_trainer_start()
@@ -207,6 +200,51 @@ class ActiveTrainer(TrainerBase):
         self._hooks=[]
         self.register_hooks(self.build_hooks())
 
+    def rebuild_everything(self):
+        # rebuild dataloader
+        self.active_step += 1
+        self.model_start.load_state_dict(self.initial_weights)
+        self.optimizer_start = self.build_optimizer(self.cfg, self.model_start)
+        self.train_data_loader = self.build_train_loader_from_dataset()
+
+
+        # For training, wrap with DDP. But don't need this for inference.
+        #if comm.get_world_size() > 1:
+        #    model = DistributedDataParallel(
+        #        model, device_ids=[comm.get_local_rank()], broadcast_buffers=False
+        #    )
+
+        # it might be good to rebuild the scheduler and trainer at every al step
+        self._trainer = (AMPTrainer if self.cfg.SOLVER.AMP.ENABLED else SimpleTrainer)(
+            self.model_start, self.train_data_loader, self.optimizer_start
+        )
+
+        # it might be a good idea to rebuild the lr scheduler so that it would fit each active learning 
+        # parameters that have to be updated are
+        #optimizer,
+        #    cfg.SOLVER.MAX_ITER,
+        #    warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
+        #    warmup_iters=cfg.SOLVER.WARMUP_ITERS,
+        #    warmup_method=cfg.SOLVER.WARMUP_METHOD
+
+        self.scheduler = self.build_lr_scheduler(self.cfg, self.optimizer)
+        # Assume no other objects need to be checkpointed.
+        # We can later make it checkpoint the stateful hooks
+        self.checkpointer = DetectionCheckpointer(
+            # Assume you want to save checkpoints together with logs/statistics
+            self.model,
+            self.cfg.OUTPUT_DIR,
+            #optimizer=self.optimizer_start,
+            #scheduler=self.scheduler,
+            # not gonna resume training anyways
+        )
+        self.start_iter = 0
+        max_iter = len(self.dataset)*self.cfg.ACTIVE_LEARNING.EPOCH/self.cfg.SOLVER.IMS_PER_BATCH
+        self.max_iter = int(max_iter)
+  
+        self._hooks=[]
+        self.register_hooks(self.build_hooks())
+
     
     # perfrom this function when the active dataset is updated
     def rebuild_trainer_start(self):
@@ -239,7 +277,7 @@ class ActiveTrainer(TrainerBase):
         # We can later make it checkpoint the stateful hooks
         self.checkpointer = DetectionCheckpointer(
             # Assume you want to save checkpoints together with logs/statistics
-            self.model_start,
+            self.model,
             self.cfg.OUTPUT_DIR,
             #optimizer=self.optimizer_start,
             #scheduler=self.scheduler,

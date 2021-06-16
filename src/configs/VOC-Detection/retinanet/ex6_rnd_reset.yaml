@@ -26,11 +26,9 @@ ACTIVE_LEARNING:
     # used to calculate the max iter for the detectron training step
     EPOCH: 18
 
-    #reset
-
     # type of cls score for each detection in one image
     # "max_conf", "entropy" "random"
-    DET_CLS_SCORE: "entropy"
+    DET_CLS_SCORE: "random"
 
     # type of merging strategy for the multiple cls score per detection in one image
     # summarizes the detection cls scores in the image
@@ -42,6 +40,19 @@ ACTIVE_LEARNING:
     # weight of the cls score and box score of the image
     W_CLS_SCORE: 0.5
 
-    MAX_DETS: 20
+    MAX_DETS: 10
 
-    OUT_DIR: "outputs/ex2_ent_d20"
+    #save images is added, set to 0 if dont like
+    #IMG_SAVE_N: 20
+
+    IMG_TOP_N: 100
+
+    IMG_BOT_N: 20
+
+    RESET: "reset"
+
+    OUT_DIR: "outputs/ex6_rnd_reset"
+
+
+    ## logs
+    # testing whether if only model_load state dict is needed to be reloaded, and other checkpointables are simply reinitialized

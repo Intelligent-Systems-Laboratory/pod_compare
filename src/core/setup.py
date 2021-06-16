@@ -148,7 +148,12 @@ def add_probabilistic_config(cfg):
 
     _C.ACTIVE_LEARNING.MAX_DETS = 20
     # epoch should be 4.5
+    _C.ACTIVE_LEARNING.RESET = "reset"
 
+    #_C.ACTIVE_LEARNING.IMG_SAVE_N = 20
+
+    _C.ACTIVE_LEARNING.IMG_TOP_N = 20
+    _C.ACTIVE_LEARNING.IMG_BOT_N = 20
 
 
 def setup_config(args, random_seed=None, is_testing=False):
